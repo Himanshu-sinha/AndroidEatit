@@ -1,10 +1,7 @@
 package solution.dev.androideatit.Model;
 
-/**
- * Created by kunda on 10/3/2017.
- */
-
 public class Order {
+
     private String ProductId;
     private String ProductName;
     private String Quantity;
@@ -61,4 +58,5 @@ public class Order {
     public void setDiscount(String discount) {
         Discount = discount;
     }
+
 }

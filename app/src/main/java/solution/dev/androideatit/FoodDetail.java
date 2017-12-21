@@ -1,9 +1,9 @@
 package solution.dev.androideatit;
 
+import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -17,93 +17,96 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
-import solution.dev.androideatit.Database.Database;
+import solution.dev.androideatit.Database.DataBase;
 import solution.dev.androideatit.Model.Food;
 import solution.dev.androideatit.Model.Order;
 
+import static solution.dev.androideatit.Common.KEY_INTENT_FOOD_ID;
+
 public class FoodDetail extends AppCompatActivity {
 
-    TextView food_Name,food_Price,food_Description;
-    ImageView food_Image;
-    CollapsingToolbarLayout collapsingToolbarLayout;
-    FloatingActionButton btnCart;
-    ElegantNumberButton numberButton;
+	TextView food_Name,food_Price,food_Description;
+	ImageView food_Image;
+	CollapsingToolbarLayout collapsingToolbarLayout;
+	FloatingActionButton btnCart;
+	ElegantNumberButton numberButton;
 
-    String foodId="";
+	String foodId="";
 
-    FirebaseDatabase database;
-    DatabaseReference foods;
+	FirebaseDatabase firebaseDatabase;
+	DatabaseReference databaseFoods;
 
-    Food currentFood;
+	Food currentFood;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_food_detail);
 
-        //Firebase
-        database = FirebaseDatabase.getInstance();
-        foods = database.getReference("Foods");
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_food_detail);
 
-        //Initialize view
-        numberButton = (ElegantNumberButton)findViewById(R.id.number_button);
-        btnCart = (FloatingActionButton)findViewById(R.id.btnCart);
+		// Init FireBase
+		firebaseDatabase = FirebaseDatabase.getInstance();
+		databaseFoods = firebaseDatabase.getReference("Foods");
 
-        btnCart.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                new Database(getBaseContext()).addToCart(new Order(
-                        foodId,
-                        currentFood.getName(),
-                        numberButton.getNumber(),
-                        currentFood.getPrice(),
-                        currentFood.getDiscount()
-                ));
-                Toast.makeText(FoodDetail.this, "Added To Cart", Toast.LENGTH_SHORT).show();
-            }
-        });
+		//Initialize view
+		numberButton = (ElegantNumberButton)findViewById(R.id.number_button);
+		btnCart = (FloatingActionButton)findViewById(R.id.btnCart);
+		food_Description = (TextView)findViewById(R.id.food_description);
+		food_Name = (TextView)findViewById(R.id.food_name);
+		food_Price = (TextView)findViewById(R.id.food_price);
+		food_Image = (ImageView) findViewById(R.id.img_food);
 
-        food_Description = (TextView)findViewById(R.id.food_description);
-        food_Name = (TextView)findViewById(R.id.food_name);
-        food_Price = (TextView)findViewById(R.id.food_price);
-        food_Image = (ImageView) findViewById(R.id.img_food);
+		collapsingToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing);
+		collapsingToolbarLayout.setExpandedTitleTextAppearance(R.style.ExpandedAppBar);
+		collapsingToolbarLayout.setCollapsedTitleTextAppearance(R.style.CollapsedAppBar);
 
-        collapsingToolbarLayout = (CollapsingToolbarLayout)findViewById(R.id.collapsing);
-        collapsingToolbarLayout.setExpandedTitleTextAppearance(R.style.ExpandedAppBar);
-        collapsingToolbarLayout.setCollapsedTitleTextAppearance(R.style.CollapsedAppBar);
+		if(getIntent() != null){
+			foodId = getIntent().getStringExtra(KEY_INTENT_FOOD_ID);
+		} if (!foodId.isEmpty()){
+			getDetailFood(foodId);
+		}
 
-        //Get food id from intent
-        if (getIntent() != null)
-            foodId = getIntent().getStringExtra("FoodId");
-        if (!foodId.isEmpty())    {
-            getDetailFood(foodId);
-        }
+		btnCart.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
 
-    }
+				new DataBase(getBaseContext()).addToCart(new Order(
+						foodId,
+						currentFood.getName(),
+						numberButton.getNumber(),
+						currentFood.getPrice(),
+						currentFood.getDiscount()
+				));
+				Toast.makeText(FoodDetail.this, "Added To Cart", Toast.LENGTH_SHORT).show();
 
-    private void getDetailFood(String foodId) {
-        foods.child(foodId).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                currentFood =dataSnapshot.getValue(Food.class);
+			}
+		});
 
-                //set Image
-                Picasso.with(getBaseContext()).load(currentFood.getImage())
-                        .into(food_Image);
 
-                collapsingToolbarLayout.setTitle(currentFood.getName());
+	}
 
-                food_Price.setText(currentFood.getPrice());
+	private void getDetailFood(final String foodId) {
+		databaseFoods.child(foodId).addValueEventListener(new ValueEventListener() {
+			@Override
+			public void onDataChange(DataSnapshot dataSnapshot) {
 
-                food_Name.setText(currentFood.getName());
+				currentFood = dataSnapshot.getValue(Food.class);
 
-                food_Description.setText(currentFood.getDescription());
-            }
+				Picasso.with(getBaseContext()).load(currentFood.getImage()).into(food_Image);
+				collapsingToolbarLayout.setTitle(currentFood.getName());
 
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
+				food_Price.setText(currentFood.getPrice());
 
-            }
-        });
-    }
+				food_Name.setText(currentFood.getName());
+
+				food_Description.setText(currentFood.getDescription());
+
+			}
+
+			@Override
+			public void onCancelled(DatabaseError databaseError) {
+
+			}
+		});
+	}
 }

@@ -1,8 +1,8 @@
 package solution.dev.androideatit;
 
 import android.app.ProgressDialog;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -18,7 +18,7 @@ import solution.dev.androideatit.Model.User;
 
 public class SignUp extends AppCompatActivity {
 
-    MaterialEditText edtPhone,edtName,edtPassword;
+    MaterialEditText edtPhone, edtName, edtPassword;
     Button btnSignUp;
 
     @Override
@@ -26,37 +26,34 @@ public class SignUp extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sign_up);
 
-        edtPhone = (MaterialEditText)findViewById(R.id.edtPhone);
-        edtName = (MaterialEditText)findViewById(R.id.edtName);
-        edtPassword = (MaterialEditText)findViewById(R.id.edtPassword);
-
+        edtName = (MaterialEditText) findViewById(R.id.edtName_SignUp);
+        edtPassword = (MaterialEditText) findViewById(R.id.edtPassword_SignUp);
+        edtPhone = (MaterialEditText) findViewById(R.id.edtPhone_SignUp);
         btnSignUp = (Button) findViewById(R.id.btnSignUp);
 
-        //Initialize Firebase
+        // Init Firebase
         FirebaseDatabase database = FirebaseDatabase.getInstance();
-        final DatabaseReference table_user = database.getReference("User");
+        // Để lấy ra cái bảng "User" từ DataBase của FireBase
+        final DatabaseReference table_user =  database.getReference("User");
 
         btnSignUp.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-                final ProgressDialog mDialog = new ProgressDialog(SignUp.this);
-                mDialog.setMessage("Please Wait...");
-                mDialog.show();
+            public void onClick(View v) {
+                final ProgressDialog mProgressDialog = new ProgressDialog(SignUp.this);
+                mProgressDialog.setMessage("Please wait...");
+                mProgressDialog.show();
 
                 table_user.addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        //check if user phone is already registered
-                        if (dataSnapshot.child(edtPhone.getText().toString()).exists()) {
-                            mDialog.dismiss();
-                            Toast.makeText(SignUp.this, "Phone Number Already Registered", Toast.LENGTH_SHORT).show();
-                            finish();
-                        } else {
-                            mDialog.dismiss();
-                            User user = new User(edtName.getText().toString(),edtPassword.getText().toString());
+                        mProgressDialog.dismiss();
+                        //Check if already existed
+                        if (dataSnapshot.child(edtPhone.getText().toString()).exists()){
+                            Toast.makeText(SignUp.this, "User existed!", Toast.LENGTH_SHORT).show();
+                        } else{
+                            User user = new User(edtName.getText().toString(), edtPassword.getText().toString());
                             table_user.child(edtPhone.getText().toString()).setValue(user);
-                            Toast.makeText(SignUp.this, "Sign Up SuccessFull !", Toast.LENGTH_SHORT).show();
-                            mDialog.dismiss();
+                            Toast.makeText(SignUp.this, "SignUp Successfully!", Toast.LENGTH_SHORT).show();
                             finish();
                         }
                     }
@@ -70,3 +67,4 @@ public class SignUp extends AppCompatActivity {
         });
     }
 }
+

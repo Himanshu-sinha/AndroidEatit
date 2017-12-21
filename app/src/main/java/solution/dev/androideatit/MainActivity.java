@@ -2,15 +2,15 @@ package solution.dev.androideatit;
 
 import android.content.Intent;
 import android.graphics.Typeface;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    Button btnSignUp,btnSignIn;
+    Button btnSignIn, btnSignUp;
     TextView txtSlogan;
 
     @Override
@@ -18,35 +18,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnSignIn = (Button)findViewById(R.id.btnSignIn);
-        btnSignUp = (Button)findViewById(R.id.btnSignUp);
+        btnSignIn = (Button) findViewById(R.id.btnSignIn);
+        btnSignUp = (Button) findViewById(R.id.btnSignUp);
 
-        txtSlogan = (TextView)findViewById(R.id.txtSlogan);
+        btnSignUp.setOnClickListener(this);
+        btnSignIn.setOnClickListener(this);
 
-        Typeface face = Typeface.createFromAsset(getAssets(), "fonts/nabila.otf");
+        txtSlogan = (TextView) findViewById(R.id.txtSlogan);
+        Typeface face = Typeface.createFromAsset(getAssets(),"fonts/NABILA.TTF");
         txtSlogan.setTypeface(face);
 
-        btnSignIn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+    }
 
-            }
-        });
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+            case R.id.btnSignIn:
 
-        btnSignUp.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent signUp = new Intent(MainActivity.this,SignUp.class);
-                startActivity(signUp);
-            }
-        });
+                Intent intentSignIn = new Intent(MainActivity.this, SignIn.class);
+                startActivity(intentSignIn);
 
-        btnSignIn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent signIn = new Intent(MainActivity.this,SignIn.class);
-                startActivity(signIn);
-            }
-        });
+                break;
+            case R.id.btnSignUp:
+
+                Intent intentSignUp = new Intent(MainActivity.this, SignUp.class);
+                startActivity(intentSignUp);
+                break;
+            default:
+                break;
+        }
+
     }
 }

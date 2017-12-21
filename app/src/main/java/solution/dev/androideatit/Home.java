@@ -3,18 +3,17 @@ package solution.dev.androideatit;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,141 +22,152 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.squareup.picasso.Picasso;
 
-import solution.dev.androideatit.Common.Common;
-import solution.dev.androideatit.Interface.ItemClickListener;
+import java.util.List;
+
+import solution.dev.androideatit.Listener.ItemClickListenerCustom;
 import solution.dev.androideatit.Model.Category;
 import solution.dev.androideatit.ViewHolder.MenuViewHolder;
 
+import static solution.dev.androideatit.Common.KEY_INTENT_MENU_ID;
+
 public class Home extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+		implements NavigationView.OnNavigationItemSelectedListener {
 
-    FirebaseDatabase database;
-    DatabaseReference category;
+	FirebaseDatabase firebaseDatabase;
+	DatabaseReference databaseReference;
 
-    TextView txtFullName;
-    RecyclerView recycler_menu;
-    RecyclerView.LayoutManager layoutManager;
-
-    FirebaseRecyclerAdapter<Category,MenuViewHolder> adapter;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
+	TextView tvFullName;
+	private RecyclerView mRecyclerMenu;
+	private List<Category> mListCategory;
 
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitle("Menu");
-        setSupportActionBar(toolbar);
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_home);
+		Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+		toolbar.setTitle("Menu");
 
-        //Initialize Firebase
-        database = FirebaseDatabase.getInstance();
-        category = database.getReference("Category");
+		setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                    Intent cartIntent = new Intent(Home.this,Cart.class);
-                    startActivity(cartIntent);
-            }
-        });
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+		// Init FireBase
+		firebaseDatabase = FirebaseDatabase.getInstance();
+		databaseReference = firebaseDatabase.getReference("Category");
 
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+		FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+		fab.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
 
-        //set Name for User
-        View headerView = navigationView.getHeaderView(0);
-        txtFullName = (TextView)headerView.findViewById(R.id.txtFullName);
-        txtFullName.setText(Common.currentUser.getName());
+				Intent intentCart = new Intent(Home.this, CartActivity.class);
+				startActivity(intentCart);
 
-        // Load Menu
-        recycler_menu = (RecyclerView)findViewById(R.id.recycler_menu);
-        recycler_menu.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(this);
-        recycler_menu.setLayoutManager(layoutManager);
+			}
+		});
 
-        loadMenu();
-    }
+		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+		ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+				this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+		drawer.setDrawerListener(toggle);
+		toggle.syncState();
 
-    private void loadMenu() {
+		NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+		navigationView.setNavigationItemSelectedListener(this);
 
-        adapter = new FirebaseRecyclerAdapter<Category, MenuViewHolder>(Category.class,R.layout.menu_item,MenuViewHolder.class,category) {
-            @Override
-            protected void populateViewHolder(MenuViewHolder viewHolder, Category model, int position) {
-                viewHolder.txtMenuName.setText(model.getName());
-                Picasso.with(getBaseContext()).load(model.getImage())
-                        .into(viewHolder.imageView);
-                final Category clickItem = model;
-                viewHolder.setItemClickListener(new ItemClickListener() {
-                    @Override
-                    public void onClick(View view, int position, boolean isLongClick) {
-                        Toast.makeText(Home.this, ""+clickItem.getName(), Toast.LENGTH_SHORT).show();
-                        {
-                            //Get Category ID and send it to new Activity
-                            Intent foodList = new Intent(Home.this,FoodList.class);
-                            //Category ID is key, so we have to get the key of every item
-                            foodList.putExtra("CategoryId",adapter.getRef(position).getKey());
-                            startActivity(foodList);
-                        }
-                    }
-                });
-            }
-        };
-        recycler_menu.setAdapter(adapter);
-    }
+		// Set Name for user
+		View headerView = navigationView.getHeaderView(0);
+		tvFullName = (TextView)  headerView.findViewById(R.id.tv_UserName_navigation);
+		tvFullName.setText(Common.currentUser.getName());
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
+		// Load menu
+		mRecyclerMenu = (RecyclerView) findViewById(R.id.recyclerMenu);
+		mRecyclerMenu.setHasFixedSize(true);
+		mRecyclerMenu.setLayoutManager(new LinearLayoutManager(this));
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.home, menu);
-        return true;
-    }
+		loadMenuFromFireBase();
+	}
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+	private void loadMenuFromFireBase() {
 
-        return super.onOptionsItemSelected(item);
-    }
+		FirebaseRecyclerAdapter<Category, MenuViewHolder> adapter =
+				new FirebaseRecyclerAdapter<Category, MenuViewHolder>(
+						Category.class, R.layout.item_menu_recyclerlist, MenuViewHolder.class,databaseReference) {
+					@Override
+					protected void populateViewHolder(MenuViewHolder viewHolder, Category model, int position) {
+						viewHolder.tvNameMenu.setText(model.getName());
+						Picasso.with(getBaseContext()).load(model.getImage()).into(viewHolder.imgMenu);
+						final Category itemClicked = model;
+						viewHolder.setListener(new ItemClickListenerCustom() {
+							@Override
+							public void onItemClick(View view, int position, boolean isLongClick) {
+								Toast.makeText(Home.this, ""+itemClicked.getName(), Toast.LENGTH_SHORT).show();
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
+								Intent intentFood = new Intent(Home.this, FoodList.class);
+								intentFood.putExtra(KEY_INTENT_MENU_ID, String.valueOf(position+1));
+								startActivity(intentFood);
+							}
+						});
+					}
+				};
+		mRecyclerMenu.setAdapter(adapter);
+	}
 
-        if (id == R.id.nav_menu) {
-            // Handle the Menu action
-        } else if (id == R.id.nav_cart) {
+	@Override
+	public void onBackPressed() {
+		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+		if (drawer.isDrawerOpen(GravityCompat.START)) {
+			drawer.closeDrawer(GravityCompat.START);
+		} else {
+			super.onBackPressed();
+		}
+	}
 
-        } else if (id == R.id.nav_orders) {
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.home, menu);
+		return true;
+	}
 
-        } else if (id == R.id.nav_logout) {
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
 
-        }
+		//noinspection SimplifiableIfStatement
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
+
+		return super.onOptionsItemSelected(item);
+	}
+
+	@SuppressWarnings("StatementWithEmptyBody")
+	@Override
+	public boolean onNavigationItemSelected(MenuItem item) {
+		// Handle navigation view item clicks here.
+		int id = item.getItemId();
+
+		if (id == R.id.nav_menu) {
+
+		} else if (id == R.id.nav_Cart) {
+			Intent cartIntent = new Intent(Home.this, CartActivity.class);
+			startActivity(cartIntent);
+
+		} else if (id == R.id.nav_order) {
+			Intent orderIntent = new Intent(Home.this, OrderStatus.class);
+			startActivity(orderIntent);
+
+		} else if (id == R.id.nav_signOut) {
+			Intent signOutIntent = new Intent(Home.this, SignIn.class);
+			signOutIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+			startActivity(signOutIntent);
+
+		}
+
+		DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+		drawer.closeDrawer(GravityCompat.START);
+		return true;
+	}
 }

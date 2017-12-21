@@ -1,84 +1,232 @@
 package solution.dev.androideatit;
 
 import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Toast;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.mancj.materialsearchbar.MaterialSearchBar;
 import com.squareup.picasso.Picasso;
 
-import solution.dev.androideatit.Interface.ItemClickListener;
+import java.util.ArrayList;
+import java.util.List;
+
+import solution.dev.androideatit.Listener.ItemClickListenerCustom;
 import solution.dev.androideatit.Model.Food;
 import solution.dev.androideatit.ViewHolder.FoodViewHolder;
 
+import static solution.dev.androideatit.Common.KEY_INTENT_FOOD_ID;
+import static solution.dev.androideatit.Common.KEY_INTENT_MENU_ID;
+
 public class FoodList extends AppCompatActivity {
 
-    RecyclerView recyclerView;
-    RecyclerView.LayoutManager layoutManager;
-
-    FirebaseDatabase database;
-    DatabaseReference foodList;
+    FirebaseDatabase firebaseDatabase;
+    DatabaseReference databaseReference;
+    private RecyclerView mRecyclerFood;
 
     String catergoryId="";
-    FirebaseRecyclerAdapter<Food,FoodViewHolder> adapter;
+    FirebaseRecyclerAdapter<Food, FoodViewHolder> adapter;
+
+    // Search Functionality
+    MaterialSearchBar searchBarFood;
+    FirebaseRecyclerAdapter<Food, FoodViewHolder> searchAdapter;
+    List<String> suggestList = new ArrayList<>();
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_food_list);
 
-        //Firebase
-        database = FirebaseDatabase.getInstance();
-        foodList = database.getReference("Foods");
 
-        recyclerView = (RecyclerView)findViewById(R.id.recycler_food);
-        recyclerView.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(layoutManager);
+        // Init FireBase
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("Foods");
 
-        //Get Intent Here
-        if (getIntent() != null) {
-            catergoryId = getIntent().getStringExtra("CategoryId");
-        } if (!catergoryId.isEmpty() && catergoryId != null) {
-            loadListFood(catergoryId);
+
+        // Load menu
+        mRecyclerFood = (RecyclerView) findViewById(R.id.recycler_Food);
+        mRecyclerFood.setHasFixedSize(true);
+        mRecyclerFood.setLayoutManager(new LinearLayoutManager(this));
+
+        if (getIntent() != null ){
+            catergoryId = getIntent().getStringExtra(KEY_INTENT_MENU_ID);
+        } if (!catergoryId.isEmpty() && catergoryId != null){
+            loadMenuFromFireBase();
         }
+
+        // Search
+        searchBarFood = (MaterialSearchBar) findViewById(R.id.searchBarFood);
+        searchBarFood.setHint("Enter your food");
+        loadSuggest(); // load suggest from FireBase
+
+        searchBarFood.setLastSuggestions(suggestList);
+        searchBarFood.setCardViewElevation(10);
+
+        searchBarFood.addTextChangeListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                List<String> suggest = new ArrayList<String>();
+                for (String search: suggestList){
+                    if(search.toLowerCase().contains(searchBarFood.getText().toLowerCase())){
+                        suggest.add(search);
+                    }
+                }
+                searchBarFood.setLastSuggestions(suggest);
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
+        searchBarFood.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
+            @Override
+            public void onSearchStateChanged(boolean enabled) {
+                // When Search Bar is close
+                // Restore original suggest adapter
+                if (!enabled){
+                    mRecyclerFood.setAdapter(adapter);
+                }
+            }
+
+            @Override
+            public void onSearchConfirmed(CharSequence text) {
+                // When Searcj finish
+                // Show result of search adapter
+                startSearch(text);
+
+            }
+
+            @Override
+            public void onButtonClicked(int buttonCode) {
+
+            }
+        });
+
 
     }
 
-    private void loadListFood(String catergoryId) {
-        adapter = new FirebaseRecyclerAdapter<Food, FoodViewHolder>(Food.class,
-                R.layout.food_item,
-                FoodViewHolder.class,
-                foodList.orderByChild("MenuId").equalTo(catergoryId)) {
-            @Override
-            protected void populateViewHolder(FoodViewHolder viewHolder, Food model, int position) {
-                viewHolder.food_name.setText(model.getName());
-                Picasso.with(getBaseContext()).load(model.getImage())
-                        .into(viewHolder.food_image);
+    private void startSearch(CharSequence text) {
 
-                final Food local = model;
-                viewHolder.setItemClickListener(new ItemClickListener() {
+        searchAdapter = new FirebaseRecyclerAdapter<Food, FoodViewHolder>(
+                Food.class,
+                R.layout.item_food_recyclerlist,
+                FoodViewHolder.class,
+                databaseReference.orderByChild("Name").equalTo(text.toString())
+        ) {
+            @Override
+            protected void populateViewHolder(FoodViewHolder viewHolder, final Food model, int position) {
+                viewHolder.tvNameFood.setText(model.getName());
+                Picasso.with(getBaseContext()).load(model.getImage()).into(viewHolder.imgFood);
+                final Food food = model;
+                viewHolder.setListener(new ItemClickListenerCustom() {
                     @Override
-                    public void onClick(View view, int position, boolean isLongClick) {
-                        Toast.makeText(FoodList.this, ""+local.getName(), Toast.LENGTH_SHORT).show();
-                        {
-                            //Start New Activity
-                            Intent foodDetail = new Intent(FoodList.this,FoodDetail.class);
-                            foodDetail.putExtra("FoodId",adapter.getRef(position).getKey());    //send food id to new activity
-                            startActivity(foodDetail);
-                        }
+                    public void onItemClick(View view, int position, boolean isLongClick) {
+                        Toast.makeText(FoodList.this, "" + model.getName(), Toast.LENGTH_SHORT).show();
+                        // start Food detail activity
+                        Intent intentFoodDetail = new Intent(FoodList.this, FoodDetail.class);
+                        intentFoodDetail.putExtra(KEY_INTENT_FOOD_ID, searchAdapter.getRef(position).getKey());
+
+                        startActivity(intentFoodDetail);
                     }
                 });
             }
         };
-        //set Adapter
-        recyclerView.setAdapter(adapter);
+        mRecyclerFood.setAdapter(searchAdapter);
+
+    }
+
+    private void loadSuggest() {
+
+         databaseReference.orderByChild("MenuId").equalTo(catergoryId)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+
+                        for(DataSnapshot postSnapshot : dataSnapshot.getChildren()){
+                            Food item = postSnapshot.getValue(Food.class);
+                            suggestList.add(item.getName());
+                        }
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+
+    }
+
+    private void loadMenuFromFireBase() {
+        adapter = new FirebaseRecyclerAdapter<Food, FoodViewHolder>(
+                Food.class, R.layout.item_food_recyclerlist, FoodViewHolder.class, databaseReference.orderByChild("MenuId").equalTo(catergoryId)) {
+            @Override
+            protected void populateViewHolder(FoodViewHolder viewHolder, final Food model, int position) {
+                viewHolder.tvNameFood.setText(model.getName());
+                Picasso.with(getBaseContext()).load(model.getImage()).into(viewHolder.imgFood);
+                final Food food = model;
+                viewHolder.setListener(new ItemClickListenerCustom() {
+                    @Override
+                    public void onItemClick(View view, int position, boolean isLongClick) {
+                        Toast.makeText(FoodList.this, "" + model.getName(), Toast.LENGTH_SHORT).show();
+                        // start Food detail activity
+                        Intent intentFoodDetail = new Intent(FoodList.this, FoodDetail.class);
+
+
+                        //	"Foods" : {
+//							"01" : {
+//								"Description" : "",
+//										"Discount" : "0",
+//										"Image" : "http://medifoods.my/images/menu/p1_ginger_pao.jpg",
+//										"MenuId" : "11",
+//										"Name" : "GINGER PAO",
+//										"Price" : "1000"
+//							},
+//							"02" : {
+//								"Description" : "",
+//										"Discount" : "0",
+//										"Image" : "http://medifoods.my/images/menu/p2_coconut_pao.jpg",
+//										"MenuId" : "11",
+//										"Name" : "COCONUT PAO",
+//										"Price" : "1000"
+//							},
+//							"03" : {
+//								"Description" : "",
+//										"Discount" : "0",
+//										"Image" : "http://medifoods.my/images/menu/p3_red_bean_pao.jpg",
+//										"MenuId" : "11",
+//										"Name" : "RED BEAN PAO",
+//										"Price" : "1000"
+//							},
+//						}
+                        intentFoodDetail.putExtra(KEY_INTENT_FOOD_ID, adapter.getRef(position).getKey());
+
+                        startActivity(intentFoodDetail);
+
+                    }
+                });
+            }
+        };
+        mRecyclerFood.setAdapter(adapter);
     }
 }
+
+

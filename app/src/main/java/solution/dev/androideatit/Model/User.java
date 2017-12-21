@@ -1,28 +1,26 @@
 package solution.dev.androideatit.Model;
 
-/**
- * Created by kunda on 10/2/2017.
- */
-
 public class User {
+
     private String Name;
     private String Password;
-    private String Phone;
-
-    public User() {
-    }
+    private String PhoneNumber;
 
     public User(String name, String password) {
         Name = name;
         Password = password;
+//        PhoneNumber = phoneNumber;
     }
 
-    public String getPhone() {
-        return Phone;
+    public User() {
     }
 
-    public void setPhone(String phone) {
-        Phone = phone;
+    public String getPhoneNumber() {
+        return PhoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        PhoneNumber = phoneNumber;
     }
 
     public String getName() {

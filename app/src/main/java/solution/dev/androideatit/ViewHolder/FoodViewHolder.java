@@ -5,35 +5,29 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import solution.dev.androideatit.Interface.ItemClickListener;
+import solution.dev.androideatit.Listener.ItemClickListenerCustom;
 import solution.dev.androideatit.R;
 
-/**
- * Created by kunda on 10/2/2017.
- */
+public class FoodViewHolder extends RecyclerView.ViewHolder {
 
-public class FoodViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+	public ImageView imgFood;
+	public TextView tvNameFood;
+	public ItemClickListenerCustom mListener;
 
-    public TextView food_name;
-    public ImageView food_image;
+	public FoodViewHolder(View itemView) {
+		super(itemView);
+		imgFood = (ImageView) itemView.findViewById(R.id.image_food);
+		tvNameFood = (TextView) itemView.findViewById(R.id.name_food);
 
-    private ItemClickListener itemClickListener;
+		itemView.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				mListener.onItemClick(view, getAdapterPosition(), false);
+			}
+		});
+	}
 
-    public void setItemClickListener(ItemClickListener itemClickListener) {
-        this.itemClickListener = itemClickListener;
-    }
-
-    public FoodViewHolder(View itemView) {
-        super(itemView);
-
-        food_name = (TextView)itemView.findViewById(R.id.food_name);
-        food_image = (ImageView)itemView.findViewById(R.id.food_image);
-
-        itemView.setOnClickListener(this);
-    }
-
-    @Override
-    public void onClick(View view) {
-        itemClickListener.onClick(view,getAdapterPosition(),false);
-    }
+	public void setListener(ItemClickListenerCustom listener) {
+		this.mListener = listener;
+	}
 }

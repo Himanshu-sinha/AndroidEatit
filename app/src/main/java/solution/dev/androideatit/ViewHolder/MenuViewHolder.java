@@ -5,36 +5,29 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import solution.dev.androideatit.Interface.ItemClickListener;
+import solution.dev.androideatit.Listener.ItemClickListenerCustom;
 import solution.dev.androideatit.R;
 
-/**
- * Created by kunda on 10/2/2017.
- */
+public class MenuViewHolder extends RecyclerView.ViewHolder {
 
-public class MenuViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+	public ImageView imgMenu;
+	public TextView tvNameMenu;
+	public ItemClickListenerCustom mListener;
 
-    public TextView txtMenuName;
-    public ImageView imageView;
+	public MenuViewHolder(View itemView) {
+		super(itemView);
+		imgMenu = (ImageView) itemView.findViewById(R.id.menu_image);
+		tvNameMenu = (TextView) itemView.findViewById(R.id.menu_name);
 
-    private ItemClickListener itemClickListener;
+		itemView.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				mListener.onItemClick(view, getAdapterPosition(), false);
+			}
+		});
+	}
 
-    public void setItemClickListener(ItemClickListener itemClickListener) {
-        this.itemClickListener = itemClickListener;
-    }
-
-    public MenuViewHolder(View itemView) {
-        super(itemView);
-
-        txtMenuName = (TextView)itemView.findViewById(R.id.menu_name);
-        imageView = (ImageView)itemView.findViewById(R.id.menu_image);
-
-        itemView.setOnClickListener(this);
-
-    }
-
-    @Override
-    public void onClick(View view) {
-        itemClickListener.onClick(view,getAdapterPosition(),false);
-    }
+	public void setListener(ItemClickListenerCustom listener) {
+		this.mListener = listener;
+	}
 }
